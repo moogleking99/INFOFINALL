@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stock Trading Admin - Authentication</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f5f7fa;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+
+        .auth-container {
+            background: #ffffff;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            width: 300px;
+            text-align: center;
+        }
+
+        input, select {
+            width: 100%;
+            padding: 10px;
+            margin: 10px 0;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+
+        input[readonly] {
+            background-color: #e9ecef;
+        }
+
+        button {
+            width: 100%;
+            padding: 10px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background-color: #0056b3;
+        }
+
+        p a {
+            color: #007bff;
+            text-decoration: none;
+        }
+
+        .signup-link, .password-requirements {
+            margin-top: 10px;
+            font-size: 0.75em;
+            color: #333333;
+        }
+
+        .password-requirements p {
+            margin: 5px 0;
+        }
+
+        .password-requirements .valid {
+            color: green;
+        }
+
+        .password-requirements .invalid {
+            color: red;
+        }
+    </style>
+</head>
+<body>
+    <div class="auth-container">
+        <h2>Sign Up</h2>
+        <form id="signupForm">
+            <input type="text" id="fname" placeholder="First name" required>
+            <input type="text" id="lname" placeholder="Last name" required>
+            <input type="text" id="email" placeholder="Email address" required>
+            <input type="text" id="username" placeholder="Username" required>
+            <input type="password" id="password" placeholder="Password" required>
+            
+            <label for="role">Select Role:</label>
+            <select id="role" required>
+                <option value="admin">Admin</option>
+                <option value="manager">Manager</option>
+                <option value="trader">Trader</option>
+            </select>
+
+            <button type="submit">Sign Up</button>
+        </form>
+
+        <div class="password-requirements">
+            <p>Password requirements:</p>
+            <p id="lowercase" class="invalid">- At least one lowercase character</p>
+            <p id="uppercase" class="invalid">- At least one uppercase character</p>
+            <p id="number" class="invalid">- At least one number</p>
+            <p id="special" class="invalid">- At least one special character</p>
+            <p id="eight" class="invalid">- 8 characters or more in length</p>
+        </div>
+
+        <p>Already have an account? <a href="index.html">Login</a></p>
+    </div>
+
+    <script>
+        document.getElementById("password").addEventListener("input", function () {
+            const password = this.value;
+            document.getElementById("lowercase").className = /[a-z]/.test(password) ? "valid" : "invalid";
+            document.getElementById("uppercase").className = /[A-Z]/.test(password) ? "valid" : "invalid";
+            document.getElementById("number").className = /\d/.test(password) ? "valid" : "invalid";
+            document.getElementById("special").className = /[!-\/:-@[-`{-~]/.test(password) ? "valid" : "invalid";
+            document.getElementById("eight").className = password.length >= 8 ? "valid" : "invalid";
+        });
+
+        document.getElementById("signupForm").addEventListener("submit", function(event) {
+            event.preventDefault();
+            let valid = true;
+
+            const fname = document.getElementById("fname").value.trim();
+            const lname = document.getElementById("lname").value.trim();
+            const email = document.getElementById("email").value.trim();
+            const username = document.getElementById("username").value.trim();
+            const password = document.getElementById("password").value;
+            const role = document.getElementById("role").value;
+        
+            const emailRegex = /^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$/;
+            if (!emailRegex.test(email)) {
+                alert("Invalid email address");
+                return;
+            }
+
+            if (localStorage.getItem(username)) {
+                alert("Username already exists. Please choose another.");
+                return;
+            }
+
+            for (let i = 0; i < localStorage.length; i++) {
+                let key = localStorage.key(i);
+                let storedUser = JSON.parse(localStorage.getItem(key));
+                if (storedUser.email === email) {
+                    alert("Email already exists. Please choose another or log in.");
+                    return;
+                }
+            }
+
+            if (!/[a-z]/.test(password) || !/[A-Z]/.test(password) || !/\d/.test(password) || !/[!-\/:-@[-`{-~]/.test(password) || password.length < 8) {
+                alert("Password does not meet requirements.");
+                return;
+            }
+
+            const userData = { username, fname, lname, email, password, role };
+            localStorage.setItem(username, JSON.stringify(userData));
+            localStorage.setItem("loggedInUser", username);
+
+            alert("Account created successfully!");
+            window.location.href = "index.html";
+        });
+    </script>
+</body>
+</html>

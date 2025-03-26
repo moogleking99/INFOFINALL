@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+</head>
+<body class="bg-gray-100">
+    <div class="flex">
+        <!-- Sidebar -->
+        <aside class="w-64 bg-gray-900 text-white h-screen p-5">
+            <h1 class="text-2xl font-bold mb-5">Admin Panel</h1>
+            <nav>
+                <a href="#dashboard" class="block py-2 px-4 hover:bg-gray-700">Dashboard</a>
+                <a href="#users" class="block py-2 px-4 hover:bg-gray-700">Manage Users</a>
+                <a href="#stocks" class="block py-2 px-4 hover:bg-gray-700">Manage Stocks</a>
+                <a href="#reports" class="block py-2 px-4 hover:bg-gray-700">Reports</a>
+                <a href="stockinfo.html" class="block py-2 px-4 hover:bg-gray-700">Stock Info</a>
+
+            </nav>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="flex-1 p-10">
+            <header class="bg-blue-500 text-white p-5 rounded-lg text-center text-2xl">
+                Admin Dashboard
+                <p class="text-sm mt-2">
+                    <strong>Username:</strong> <span id="username"></span>
+                </p>
+            </header>
+
+            <!-- Dashboard Actions -->
+            <div class="grid grid-cols-3 gap-4 mt-5">
+                <div class="bg-white p-5 rounded-lg shadow">
+                    <h3 class="text-lg font-semibold">Grant Access</h3>
+                    <input id="grantUserId" type="number" class="border p-2 w-full mt-2" placeholder="User ID">
+                    <button onclick="grantAccess()" class="mt-3 bg-blue-500 text-white py-2 px-4 rounded">Grant</button>
+                </div>
+                <div class="bg-white p-5 rounded-lg shadow">
+                    <h3 class="text-lg font-semibold">Revoke Access</h3>
+                    <input id="revokeUserId" type="number" class="border p-2 w-full mt-2" placeholder="User ID">
+                    <button onclick="revokeAccess()" class="mt-3 bg-red-500 text-white py-2 px-4 rounded">Revoke</button>
+                </div>
+                <div class="bg-white p-5 rounded-lg shadow">
+                    <h3 class="text-lg font-semibold">Search Stock</h3>
+                    <input id="searchStock" type="text" class="border p-2 w-full mt-2" placeholder="Stock Name">
+                    <button onclick="searchStock()" class="mt-3 bg-green-500 text-white py-2 px-4 rounded">Search</button>
+                </div>
+                <div class="bg-white p-5 rounded-lg shadow">
+                    <h3 class="text-lg font-semibold">Assign User Role</h3>
+                    <input id="assignUserId" type="number" class="border p-2 w-full mt-2" placeholder="User ID">
+                    <input id="assignRole" type="text" class="border p-2 w-full mt-2" placeholder="Role">
+                    <button onclick="assignUserRole()" class="mt-3 bg-purple-500 text-white py-2 px-4 rounded">Assign</button>
+                </div>
+            </div>
+
+            <!-- Logout Button -->
+            <button class="mt-10 bg-red-500 text-white py-2 px-4 rounded" onclick="logout()">Logout</button>
+        </main>
+    </div>
+
+    <script>
+        function grantAccess() {
+            const userID = document.getElementById("grantUserId").value;
+            alert(`Granted access to user ${userID}`);
+        }
+        function revokeAccess() {
+            const userID = document.getElementById("revokeUserId").value;
+            alert(`Revoked access from user ${userID}`);
+        }
+        function searchStock() {
+            const stockName = document.getElementById("searchStock").value;
+            alert(`Searching stock: ${stockName}`);
+        }
+        function assignUserRole() {
+            const userID = document.getElementById("assignUserId").value;
+            const role = document.getElementById("assignRole").value;
+            alert(`Assigned role ${role} to user ${userID}`);
+        }
+        function logout() {
+            localStorage.removeItem("loggedInUser");
+            window.location.href = "index.html";
+        }
+    </script>
+</body>
+</html>

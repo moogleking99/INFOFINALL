@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - Stock Trading Admin</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f5f7fa;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+
+        .login-container {
+            background: #ffffff;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            width: 300px;
+            text-align: center;
+        }
+
+        h2 {
+            color: #333333;
+        }
+
+        input {
+            width: 100%;
+            padding: 10px;
+            margin: 10px 0;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+
+        button {
+            width: 100%;
+            padding: 10px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+
+        button:hover {
+            background-color: #0056b3;
+        }
+
+        .signup-link {
+            margin-top: 10px;
+        }
+
+        .signup-link a {
+            color: #007bff;
+            text-decoration: none;
+        }
+
+        .signup-link a:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <div class="login-container">
+        <h2>Login</h2>
+        <form id="loginForm">
+            <input type="text" id="username" placeholder="Username" required>
+            <input type="password" id="password" placeholder="Password" required>
+            <button type="submit">Login</button>
+        </form>
+        <div class="signup-link">
+            <p>Don't have an account? <a href="signup.html">Sign Up</a></p>
+        </div>
+    </div>
+
+    <script>
+        document.getElementById("loginForm").addEventListener("submit", function(event) {
+            event.preventDefault();
+            const inputUsername = document.getElementById("username").value.trim();
+            const password = document.getElementById("password").value;
+
+            if (!inputUsername || !password) {
+                alert("Please enter both username and password.");
+                return;
+            }
+
+            // Normalize the username to lowercase
+            const normalizedUsername = inputUsername.toLowerCase();
+            let foundUser = null;
+
+            // Loop through localStorage to find the correct user
+            for (let i = 0; i < localStorage.length; i++) {
+                const key = localStorage.key(i);
+                try {
+                    const storedUser = JSON.parse(localStorage.getItem(key));
+
+                    // Ensure storedUser exists and matches case-insensitively
+                    if (storedUser && storedUser.username.toLowerCase() === normalizedUsername) {
+                        foundUser = storedUser;
+                        break;
+                    }
+                } catch (error) {
+                    console.error("Corrupted data in localStorage:", key, localStorage.getItem(key));
+                }
+            }
+
+            if (foundUser) {
+                const { username, password: storedPassword, role } = foundUser;
+
+                if (password === storedPassword) {
+                    alert(`Login successful!\nWelcome, ${username}!`);
+                    localStorage.setItem("loggedInUser", username);
+
+                    // Redirect based on role
+                    const roleRedirects = {
+                        admin: "admin.html",
+                        manager: "manger.html",
+                        trader: "trader.html",
+                    };
+
+                    window.location.href = roleRedirects[role] || "signup.html";
+                } else {
+                    alert("Incorrect password. Please try again.");
+                }
+            } else {
+                alert("User not found. Please sign up.");
+            }
+        });
+
+        // Debugging: Print all stored users
+        console.log("Stored Users in LocalStorage:");
+        for (let i = 0; i < localStorage.length; i++) {
+            const key = localStorage.key(i);
+            console.log(key, ":", localStorage.getItem(key));
+        }
+    </script>
+</body>
+</html>

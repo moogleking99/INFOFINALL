@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Stock Info with Charts</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f0f4f8;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 30px;
+    }
+
+    .search-box {
+      margin-bottom: 30px;
+    }
+
+    input[type="text"] {
+      padding: 10px;
+      font-size: 16px;
+      width: 250px;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+    }
+
+    button {
+      padding: 10px 15px;
+      font-size: 16px;
+      background-color: #007bff;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      margin-left: 10px;
+      cursor: pointer;
+    }
+
+    .card {
+      background-color: white;
+      padding: 20px;
+      border-radius: 10px;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+      margin-bottom: 20px;
+      width: 400px;
+      text-align: center;
+    }
+
+    canvas {
+      margin: 20px auto;
+      max-width: 500px;
+    }
+
+    #error {
+      color: red;
+    }
+  </style>
+</head>
+<body>
+  <h1>📈 Stock Info with Charts</h1>
+
+  <div class="search-box">
+    <input type="text" id="symbolInput" placeholder="Enter stock symbol (e.g., AAPL)">
+    <button onclick="fetchStock()">Search</button>
+  </div>
+
+  <div class="card" id="stockCard" style="display: none;">
+    <h2>Stock: <span id="stock-symbol"></span></h2>
+    <p><strong>Price:</strong> $<span id="price"></span></p>
+    <p><strong>Volume:</strong> <span id="volume"></span></p>
+  </div>
+
+  <canvas id="pieChart"></canvas>
+  <canvas id="barChart"></canvas>
+
+  <p id="error"></p>
+
+  <script>
+    const apiKey = '10AA8UQNITWUP2AC';
+    let pieChart, barChart;
+
+    function fetchStock() {
+      const symbol = document.getElementById('symbolInput').value.toUpperCase().trim();
+      if (!symbol) {
+        document.getElementById('error').innerText = "Please enter a stock symbol.";
+        return;
+      }
+
+      document.getElementById('error').innerText = "";
+
+      fetch(`https://www.alphavantage.co/query?function=GLOBAL_QUOTE&symbol=${symbol}&apikey=${apiKey}`)
+        .then(res => res.json())
+        .then(data => {
+          const quote = data["Global Quote"];
+          if (!quote || Object.keys(quote).length === 0) {
+            document.getElementById('stockCard').style.display = "none";
+            document.getElementById('error').innerText = "Stock not found. Try a valid symbol.";
+            return;
+          }
+
+          const price = parseFloat(quote["05. price"]);
+          const open = parseFloat(quote["02. open"]);
+          const high = parseFloat(quote["03. high"]);
+          const low = parseFloat(quote["04. low"]);
+          const prevClose = parseFloat(quote["08. previous close"]);
+          const volume = parseInt(quote["06. volume"]);
+          const change = parseFloat(quote["09. change"]);
+
+          document.getElementById('stock-symbol').innerText = symbol;
+          document.getElementById('price').innerText = price.toFixed(2);
+          document.getElementById('volume').innerText = volume.toLocaleString();
+          document.getElementById('stockCard').style.display = "block";
+
+          drawPieChart(open, high, low, prevClose);
+          drawBarChart(price, volume, change);
+        })
+        .catch(err => {
+          console.error(err);
+          document.getElementById('error').innerText = "Something went wrong.";
+        });
+    }
+
+    function drawPieChart(open, high, low, close) {
+      if (pieChart) pieChart.destroy();
+
+      const ctx = document.getElementById('pieChart').getContext('2d');
+      pieChart = new Chart(ctx, {
+        type: 'pie',
+        data: {
+          labels: ['Open', 'High', 'Low', 'Prev Close'],
+          datasets: [{
+            data: [open, high, low, close],
+            backgroundColor: ['#4caf50', '#2196f3', '#ff9800', '#9c27b0'],
+          }]
+        },
+        options: {
+          responsive: true,
+          plugins: {
+            title: {
+              display: true,
+              text: 'Price Breakdown'
+            }
+          }
+        }
+      });
+    }
+
+    function drawBarChart(price, volume, change) {
+      if (barChart) barChart.destroy();
+
+      const ctx = document.getElementById('barChart').getContext('2d');
+      barChart = new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels: ['Price', 'Change', 'Volume (k)'],
+          datasets: [{
+            label: 'Stock Stats',
+            data: [price, change, volume / 1000],
+            backgroundColor: ['#2196f3', '#f44336', '#ffc107']
+          }]
+        },
+        options: {
+          responsive: true,
+          scales: {
+            y: {
+              beginAtZero: true
+            }
+          },
+          plugins: {
+            title: {
+              display: true,
+              text: 'Stock Overview'
+            }
+          }
+        }
+      });
+    }
+  </script>
+</body>
+</html>
