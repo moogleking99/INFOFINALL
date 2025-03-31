@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Stock Portfolio</title>
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <!-- Chart.js DataLabels plugin -->
+  <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2"></script>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 20px;
+      background: #f9f9f9;
+      color: #333;
+    }
+    h1, h2 {
+      text-align: center;
+    }
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 20px;
+      background: #fff;
+    }
+    th, td {
+      padding: 10px;
+      text-align: center;
+      border: 1px solid #ddd;
+    }
+    th {
+      background: #007BFF;
+      color: #fff;
+    }
+    .charts {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-around;
+      margin-top: 30px;
+    }
+    .chart-container {
+      width: 320px;
+      margin: 20px;
+      background: #fff;
+      padding: 10px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+      border-radius: 5px;
+    }
+    .totals-container {
+      background: #fff;
+      padding: 10px;
+      margin-bottom: 30px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+      border-radius: 5px;
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Stock Portfolio</h1>
+    
+    <!-- Table of current stock data -->
+    <table id="stocksTable">
+      <thead>
+        <tr>
+          <th>Stock Symbol</th>
+          <th>Shares</th>
+          <th>Current Price ($)</th>
+          <th>Current Value ($)</th>
+          <th>Change 24h (%)</th>
+          <th>Change 7d (%)</th>
+          <th>Change 31d (%)</th>
+        </tr>
+      </thead>
+      <tbody>
+        <!-- Filled by JavaScript -->
+      </tbody>
+    </table>
+
+    <!-- Totals for past periods -->
+    <div class="totals-container">
+      <h2>Portfolio Totals</h2>
+      <p>24 Hours Ago: $<span id="total24h"></span></p>
+      <p>7 Days Ago: $<span id="total7d"></span></p>
+      <p>31 Days Ago: $<span id="total31d"></span></p>
+    </div>
+
+    <!-- Pie Charts -->
+    <h2>Portfolio Allocation (Past Values)</h2>
+    <div class="charts">
+      <div class="chart-container">
+        <h3>24 Hours Ago</h3>
+        <canvas id="chart24h"></canvas>
+      </div>
+      <div class="chart-container">
+        <h3>7 Days Ago</h3>
+        <canvas id="chart7d"></canvas>
+      </div>
+      <div class="chart-container">
+        <h3>31 Days Ago</h3>
+        <canvas id="chart31d"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // List of 3 stock symbols
+    const stockSymbols = ['AAPL', 'GOOGL', 'AMZN'];
+
+    // Generate a random integer between min and max (inclusive)
+    function randomInt(min, max) {
+      return Math.floor(Math.random() * (max - min + 1)) + min;
+    }
+
+    // Generate a random float between min and max (for percentage changes)
+    function randomFloat(min, max, decimals = 2) {
+      return parseFloat((Math.random() * (max - min) + min).toFixed(decimals));
+    }
+
+    // Data array for stocks
+    const stocksData = stockSymbols.map(symbol => ({
+      symbol,
+      shares: randomInt(1, 5),
+      price: 0, // Will be fetched from API or simulated
+      change24h: randomFloat(-5, 5),
+      change7d: randomFloat(-10, 10),
+      change31d: randomFloat(-20, 20)
+    }));
+
+    // Fetch price for a stock using Twelve Data API
+    async function fetchPrice(symbol) {
+      const url = `https://api.twelvedata.com/quote?symbol=${symbol}&apikey=demo`;
+      try {
+        const response = await fetch(url);
+        const data = await response.json();
+        if (data && data.price) {
+          return parseFloat(data.price);
+        } else {
+          // Fallback: random price if API doesn't return a valid price
+          return randomFloat(50, 500, 2);
+        }
+      } catch (error) {
+        console.error(`Error fetching data for ${symbol}:`, error);
+        // Fallback: random price on error
+        return randomFloat(50, 500, 2);
+      }
+    }
+
+    // Update the table with stock data
+    function updateTable(data) {
+      const tbody = document.querySelector('#stocksTable tbody');
+      tbody.innerHTML = '';
+      data.forEach(stock => {
+        const currentValue = stock.shares * stock.price;
+        const row = document.createElement('tr');
+        row.innerHTML = `
+          <td>${stock.symbol}</td>
+          <td>${stock.shares}</td>
+          <td>${stock.price.toFixed(2)}</td>
+          <td>${currentValue.toFixed(2)}</td>
+          <td>${stock.change24h}%</td>
+          <td>${stock.change7d}%</td>
+          <td>${stock.change31d}%</td>
+        `;
+        tbody.appendChild(row);
+      });
+    }
+
+    // Compute the past value given current value and % change
+    function computePastValue(currentValue, changePercent) {
+      // If the stock has changed by X%, then:
+      //   Past Value = Current Value / (1 + X/100)
+      return currentValue / (1 + changePercent / 100);
+    }
+
+    // Compute total portfolio value for a given time frame
+    function computeTotalValue(stocks, timeframe) {
+      let total = 0;
+      stocks.forEach(stock => {
+        const currentValue = stock.shares * stock.price;
+        let pastValue = 0;
+        if (timeframe === '24h') {
+          pastValue = computePastValue(currentValue, stock.change24h);
+        } else if (timeframe === '7d') {
+          pastValue = computePastValue(currentValue, stock.change7d);
+        } else if (timeframe === '31d') {
+          pastValue = computePastValue(currentValue, stock.change31d);
+        }
+        total += pastValue;
+      });
+      return total;
+    }
+
+    // Draw a pie chart for the specified timeframe
+    function drawPieChart(ctx, stocks, timeframe) {
+      const labels = [];
+      const values = [];
+      stocks.forEach(stock => {
+        const currentValue = stock.shares * stock.price;
+        let pastValue = 0;
+        if (timeframe === '24h') {
+          pastValue = computePastValue(currentValue, stock.change24h);
+        } else if (timeframe === '7d') {
+          pastValue = computePastValue(currentValue, stock.change7d);
+        } else if (timeframe === '31d') {
+          pastValue = computePastValue(currentValue, stock.change31d);
+        }
+        labels.push(stock.symbol);
+        values.push(pastValue);
+      });
+
+      new Chart(ctx, {
+        type: 'pie',
+        data: {
+          labels,
+          datasets: [{
+            data: values
+          }]
+        },
+        options: {
+          responsive: true,
+          plugins: {
+            legend: {
+              position: 'bottom'
+            },
+            datalabels: {
+              formatter: (value, context) => {
+                const label = context.chart.data.labels[context.dataIndex];
+                const total = context.dataset.data.reduce((acc, val) => acc + val, 0);
+                const percentage = (value / total * 100).toFixed(2);
+                return `${label}: ${percentage}%`;
+              },
+              color: '#fff',
+              textStrokeColor: '#000',
+              textStrokeWidth: 2,
+              font: {
+                weight: 'bold',
+                size: 12
+              },
+              anchor: 'end',
+              align: 'start'
+            }
+          }
+        },
+        plugins: [ChartDataLabels]
+      });
+    }
+
+    // Main initialization
+    async function initPortfolio() {
+      // Fetch actual or fallback prices
+      for (let stock of stocksData) {
+        stock.price = await fetchPrice(stock.symbol);
+      }
+
+      // Update the table with final data
+      updateTable(stocksData);
+
+      // Compute and display totals for each time period
+      document.getElementById('total24h').textContent = computeTotalValue(stocksData, '24h').toFixed(2);
+      document.getElementById('total7d').textContent = computeTotalValue(stocksData, '7d').toFixed(2);
+      document.getElementById('total31d').textContent = computeTotalValue(stocksData, '31d').toFixed(2);
+
+      // Draw pie charts
+      const ctx24h = document.getElementById('chart24h').getContext('2d');
+      const ctx7d = document.getElementById('chart7d').getContext('2d');
+      const ctx31d = document.getElementById('chart31d').getContext('2d');
+
+      drawPieChart(ctx24h, stocksData, '24h');
+      drawPieChart(ctx7d, stocksData, '7d');
+      drawPieChart(ctx31d, stocksData, '31d');
+    }
+
+    window.onload = initPortfolio;
+  </script>
+</body>
+</html>
